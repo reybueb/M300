@@ -1,7 +1,7 @@
 # M300 Documentation
 ## SSH
 ### Files
-| Filename | Use |.
+| Filename | Use |
 ------------------
 | id_rsa | Private Key | 
 | id_rsa.pub | Public Key wich we will copy on the remote host |
