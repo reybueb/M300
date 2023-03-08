@@ -85,7 +85,7 @@ zone "220.168.192.in-addr.arpa" IN {
 
 # db.smartlearn.lan
 ;
-; Zone fuer smartlearn.lan
+; Zone smartlearn.lan
 ;
 $TTL    600
 @       IN       SOA     vmls3.smartlearn.dmz. root.smartlearn.ch. (
@@ -103,7 +103,7 @@ vmlp1   IN       A       192.168.210.31
 
 # db.192.168.210
 ;
-; Reverse Zone fuer smartlearn.dmz
+; Reverse Zone smartlearn.lan
 ;
 $TTL    600
 @       IN       SOA     vmls3.smartlearn.dmz. root.smartlearn.ch. (
@@ -121,7 +121,7 @@ $TTL    600
 
 # db.smartlearn.dmz
 ;
-; Zone fuer smartlearn.dmz
+; Zone smartlearn.dmz
 ;
 $TTL    600
 @       IN       SOA     vmls3.smartlearn.dmz.   root.smartlearn.ch. (
@@ -137,7 +137,7 @@ vmls3   IN       A       192.168.220.13
 
 # db.192.168.220
 ;
-; Reverse Zone fuer smartlearn.dmz
+; Reverse Zone smartlearn.dmz
 ;
 $TTL    600
 @       IN       SOA     vmls3.smartlearn.dmz. root.smartlearn.ch. (
@@ -152,13 +152,14 @@ $TTL    600
 13      IN     PTR   vmls3.smartlearn.dmz.
 ```
 ```
-# Auf Client & Server fuer search-domain eintragen
+# On Client & DNS-Server for search-domain
 sudo resolvectl dns eth0 192.168.220.13
 sudo resolvectl domain eth0 smartlearn.dmz smartlearn.lan
 ```
 ```
-# Testen
+# Testing
 journalctl -f -u named
+named-checkconf <conffile>
 named-checkzone <zone> <zonefile>
 nslookup <fqdn/ip> <dnsserverip>
 ```
