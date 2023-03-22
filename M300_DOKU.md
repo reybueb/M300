@@ -163,3 +163,72 @@ named-checkconf <conffile>
 named-checkzone <zone> <zonefile>
 nslookup <fqdn/ip> <dnsserverip>
 ```
+## Apache
+```
+sudo apt update -y
+sudo apt install apache2 -y
+cd /etc/apache2/
+sudo vim sites-available/www.smartlearn.dmz.conf
+<VirtualHost *:80>
+    ServerName          smartlearn.dmz
+    ServerAlias         www.smartlearn.dmz
+    ServerAdmin         root@root.com
+    DocumentRoot        /var/www/smartlearn.dmz/
+
+    ErrorLog            ${APACHE_LOG_DIR}/error.log
+    CustomLog           ${APACHE_LOG_DIR}/access.log combined
+
+    <Directory /var/www/smartlearn.dmz/>
+        Require all granted
+    </Directory>
+</VirtualHost>
+sudo mkdir /var/www/smartlearn.dmz
+sudo chown www-data:www-data /var/www/smartlearn.dmz
+sudo vim /var/www/smartlearn.dmz/index.html
+<html>
+    <head>
+        <title>Welcome to smartlearn.dmz!</title>
+    </head>
+    <body>
+        <h1>Success!  The smartlearn.dmz virtual host is working!</h1>
+    </body>
+</html>
+sudo chown www-data:www-data /var/www/smartlearn.dmz/index.html
+sudo a2ensite www.smartlearn.dmz.conf 
+sudo a2dissite www.smartlearn.dmz.conf 
+sudo systemctl reload apache2
+sudo vim /etc/bind/db.smartlearn.dmz
+www IN A 192.168.220.13
+sudo vim /etc/bind/db.192.168.220
+13 IN CNAME www.smartlearn.dmz
+sudo systemctl restart bind9
+# Testing 
+curl -v www.smartlearn.dmz
+*   Trying 192.168.220.13:80...
+* Connected to 192.168.220.13 (192.168.220.13) port 80 (#0)
+> GET / HTTP/1.1
+> Host: 192.168.220.13
+> User-Agent: curl/7.81.0
+> Accept: */*
+> 
+* Mark bundle as not supporting multiuse
+< HTTP/1.1 200 OK
+< Date: Wed, 22 Mar 2023 10:25:15 GMT
+< Server: Apache/2.4.52 (Ubuntu)
+< Last-Modified: Wed, 15 Mar 2023 10:08:10 GMT
+< ETag: "b6-5f6ed8575632f"
+< Accept-Ranges: bytes
+< Content-Length: 182
+< Vary: Accept-Encoding
+< Content-Type: text/html
+< 
+<html>
+    <head>
+        <title>Welcome to smartlearn.dmz!</title>
+    </head>
+    <body>
+        <h1>Success!  The smartlearn.dmz virtual host is working!</h1>
+    </body>
+</html>
+* Connection #0 to host 192.168.220.13 left intact
+```
