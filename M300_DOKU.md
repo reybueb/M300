@@ -163,6 +163,36 @@ named-checkconf <conffile>
 named-checkzone <zone> <zonefile>
 nslookup <fqdn/ip> <dnsserverip>
 ```
+## Disk partitionate & format & mount 
+```
+# List all Disks and partitions
+lsblk
+
+# partitionate
+sudo fdisk /dev/sdb
+n
+p
+1
+1
+130
+w
+
+# formate
+sudo mkfs.ext4 /dev/sdb1
+
+# Creat direcotry
+sudo mkdir /www
+
+# Edit file for auto-mount by restart
+sudo vim /etc/fstab
+/dev/sdb1 /www ext4 defaults 1 2 
+
+# mount
+mount -a 
+mount
+...
+/dev/sdb1 on /www type ext3 (rw)
+```
 ## Apache
 ```
 # Update Host and install apache2
