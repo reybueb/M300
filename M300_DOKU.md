@@ -165,9 +165,14 @@ nslookup <fqdn/ip> <dnsserverip>
 ```
 ## Apache
 ```
+# Update Host and install apache2
 sudo apt update -y
 sudo apt install apache2 -y
+
+# Go to the default directory
 cd /etc/apache2/
+
+# Creat new site configuration
 sudo vim sites-available/www.smartlearn.dmz.conf
 <VirtualHost *:80>
     ServerName          smartlearn.dmz
@@ -182,8 +187,12 @@ sudo vim sites-available/www.smartlearn.dmz.conf
         Require all granted
     </Directory>
 </VirtualHost>
+
+# Create website-file directory and change the owner/group to www-data
 sudo mkdir /var/www/smartlearn.dmz
 sudo chown www-data:www-data /var/www/smartlearn.dmz
+
+# Create index.html file
 sudo vim /var/www/smartlearn.dmz/index.html
 <html>
     <head>
@@ -193,15 +202,26 @@ sudo vim /var/www/smartlearn.dmz/index.html
         <h1>Success!  The smartlearn.dmz virtual host is working!</h1>
     </body>
 </html>
+
+# Change the owner of the index.html 
 sudo chown www-data:www-data /var/www/smartlearn.dmz/index.html
+
+# Enable virtualhostconfig and disable default virtualhostconfig 
 sudo a2ensite www.smartlearn.dmz.conf 
 sudo a2dissite www.smartlearn.dmz.conf 
+
+# Reload sites and configs 
 sudo systemctl reload apache2
+
+# Add new dns record
 sudo vim /etc/bind/db.smartlearn.dmz
 www IN A 192.168.220.13
 sudo vim /etc/bind/db.192.168.220
 13 IN CNAME www.smartlearn.dmz
+
+# Restart the dns to load the new configuration
 sudo systemctl restart bind9
+
 # Testing 
 curl -v www.smartlearn.dmz
 *   Trying 192.168.220.13:80...
