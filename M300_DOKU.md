@@ -215,8 +215,11 @@ sudo systemctl reload apache2
 
 # Add new dns record
 sudo vim /etc/bind/db.smartlearn.dmz
+...
 www IN A 192.168.220.13
+
 sudo vim /etc/bind/db.192.168.220
+...
 13 IN CNAME www.smartlearn.dmz
 
 # Restart the dns to load the new configuration
