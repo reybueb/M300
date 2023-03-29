@@ -7,7 +7,7 @@
 | id_rsa.pub | Public Key wich we will copy on the remote host |
 | kown_hosts | Hosts wich You where connected to |
 | authorized_keys | Public Keys from user which have been connecting to this host |
-### Use
+### vmlp1: Use
 ```
 # Private and Public Key generation
 ssh-keygen
@@ -156,8 +156,8 @@ $TTL    600
 sudo resolvectl dns eth0 192.168.220.13
 sudo resolvectl domain eth0 smartlearn.dmz smartlearn.lan
 ```
+### vmlp1: Testing
 ```
-# Testing
 journalctl -f -u named
 named-checkconf <conffile>
 named-checkzone <zone> <zonefile>
@@ -317,8 +317,8 @@ www     IN       A       192.168.220.13
 # Restart the dns to load the new configuration
 sudo systemctl restart bind9
 ```
-
-### Testing 
+### vmlp1: Testing 
+```
 curl -sI www.smartlearn.lan | head -1
 HTTP/1.1 200 OK
 
@@ -342,4 +342,41 @@ HTTP/1.1 200 OK
 
 curl -sI smartlearn.dmz | head -1
 HTTP/1.1 200 OK
+```
+## vmls3 & vmls5: Proftpd
+```
+sudo apt update
+sudo apt install proftpd -y
+sudo chmod -R 775 /www
+```
+### vmls3: Create user 
+```
+sudo adduser --home /www/www.smartlearn.dmz --no-create-home ftpuser
+sudo usermod -a -G www-data ftpuser
+```
+### vmls5: Create user
+```
+sudo adduser --home /www --no-create-home ftpuser
+sudo usermod -a -G www-data ftpuser
+```
+### vmls3: Add DNS Records
+```
+sudo vim /etc/bind/db.smartlearn.dmz
+...
+ftp     IN       A       192.168.220.13
+...
+
+sudo vim /etc/bind/db.smartlearn.lan
+...
+ftp     IN       A       192.168.210.65
+...
+
+sudo systemctl restart named
+```
+### vmlp1: Testing
+```
+sftp ftpuser@vmls3
+sftp ftpuser@ftp.smartlearn.dmz
+sftp ftpuser@vmls5
+sftp ftpuser@ftp.smartlearn.lan
 ```
