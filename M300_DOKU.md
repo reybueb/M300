@@ -220,8 +220,10 @@ sudo vim /etc/apache2/sites-available/www.smartlearn.dmz.conf
     ServerName          smartlearn.dmz
     ServerAlias         www.smartlearn.dmz
     ServerAdmin         webmaster@smartlearn.dmz
-    DocumentRoot        /www/smartlearn.dmz
-
+    DocumentRoot        /www/www.smartlearn.dmz
+    <Directory /www/www.smartlearn.dmz>
+        Require all granted
+    </Directory>
     ErrorLog            ${APACHE_LOG_DIR}/error.log
     CustomLog           ${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>
@@ -230,21 +232,13 @@ sudo vim /etc/apache2/sites-available/www.smartlearn.dmz.conf
 sudo a2ensite www.smartlearn.dmz.conf 
 sudo a2dissite 000-default.conf 
 
+# Add sites-files to /www/
+ll /www/
+...
+drwxrwxr-x  4 www-data www-data  4096 Mar 29 10:39 www.smartlearn.dmz/
+
 # Reload sites and configs 
 sudo systemctl reload apache2
-
-# Add new dns record
-sudo vim /etc/bind/db.smartlearn.dmz
-...
-www IN A 192.168.220.13
-@   IN A 192.168.220.13
-
-# Restart the dns to load the new configuration
-sudo systemctl restart bind9
-
-# Testing 
-curl -sI www.smartlearn.dmz | head -1
-HTTP/1.1 200 OK
 ```
 ### vmls5: For www.smartlearn.lan & ku1.smartlearn.lan & ku2.smartlearn.lan 
 ```
@@ -255,38 +249,37 @@ sudo vim /etc/apache2/sites-available/www.smartlearn.lan.conf
     ServerAlias         www.smartlearn.lan
     ServerAdmin         webmaster@smartlearn.lan
     DocumentRoot        /www/smartlearn.lan
+    <Directory /www/ku1.smartlearn.lan>
+        Require all granted
+    </Directory>
     ErrorLog            ${APACHE_LOG_DIR}/error.log
     CustomLog           ${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>
 
 sudo vim /etc/apache2/sites-available/ku1.smartlearn.lan.conf
 <VirtualHost *:80>
-    ServerAdmin webmaster@smartlearn.lan
-    ServerName ku1.smartlearn.lan
-    ServerAlias www.ku1.smartlearn.lan
-    DocumentRoot /www/ku1.smartlearn.lan
+    ServerAdmin         webmaster@smartlearn.lan
+    ServerName          ku1.smartlearn.lan
+    ServerAlias         www.ku1.smartlearn.lan
+    DocumentRoot        /www/ku1.smartlearn.lan
     <Directory /www/ku1.smartlearn.lan>
-        Options Indexes FollowSymLinks
-        AllowOverride All
         Require all granted
     </Directory>
-    ErrorLog ${APACHE_LOG_DIR}/error.log
-    CustomLog ${APACHE_LOG_DIR}/access.log combined
+    ErrorLog            ${APACHE_LOG_DIR}/error.log
+    CustomLog           ${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>
 
 sudo vim /etc/apache2/sites-available/ku2.smartlearn.lan.conf
 <VirtualHost *:80>
-    ServerAdmin webmaster@smartlearn.lan
-    ServerName ku2.smartlearn.lan
-    ServerAlias www.ku2.smartlearn.lan
-    DocumentRoot /www/ku2.smartlearn.lan
+    ServerAdmin         webmaster@smartlearn.lan
+    ServerName          ku2.smartlearn.lan
+    ServerAlias         www.ku2.smartlearn.lan
+    DocumentRoot        /www/ku2.smartlearn.lan
     <Directory /www/ku2.smartlearn.lan>
-        Options Indexes FollowSymLinks
-        AllowOverride All
         Require all granted
     </Directory>
-    ErrorLog ${APACHE_LOG_DIR}/error.log
-    CustomLog ${APACHE_LOG_DIR}/access.log combined
+    ErrorLog            ${APACHE_LOG_DIR}/error.log
+    CustomLog           ${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>
 
 # Enable virtualhostconfig and disable default virtualhostconfig 
@@ -295,23 +288,58 @@ sudo a2ensite ku1.smartlearn.lan.conf
 sudo a2ensite ku2.smartlearn.lan.conf
 sudo a2dissite 000-default.conf 
 
+# Add sites-files to /www/
+ll /www/
+...
+drwxrwxr-x  4 www-data www-data  4096 Mar 29 11:13 ku1.smartlearn.lan/
+drwxrwxr-x  4 www-data www-data  4096 Mar 29 11:13 ku2.smartlearn.lan/
+...
+drwxrwxr-x  4 www-data www-data  4096 Mar 29 11:13 www.smartlearn.lan/
+
+
 # Reload sites and configs 
 sudo systemctl reload apache2
-
-# Add new dns record
+```
+### vmls3: Add DNS Records
+```
 sudo vim /etc/bind/db.smartlearn.lan
 ...
-www     IN A 192.168.210.65
-@       IN A 192.168.210.65
-ku1     IN A 192.168.210.65
-ku2     IN A 192.168.210.65
-www.ku1 IN A 192.168.210.65
-www.ku2 IN A 192.168.210.65
+www     IN       A       192.168.210.65
+@       IN       A       192.168.210.65
+ku1     IN       A       192.168.210.65
+ku2     IN       A       192.168.210.65
+
+sudo vim /etc/bind/db.smartlearn.dmz
+...
+www     IN       A       192.168.220.13
+@       IN       A       192.168.220.13
 
 # Restart the dns to load the new configuration
 sudo systemctl restart bind9
+```
 
-# Testing 
+### Testing 
 curl -sI www.smartlearn.lan | head -1
+HTTP/1.1 200 OK
+
+curl -sI smartlearn.lan | head -1
+HTTP/1.1 200 OK
+
+curl -sI www.ku1.smartlearn.lan | head -1
+HTTP/1.1 200 OK
+
+curl -sI www.ku2.smartlearn.lan | head -1
+HTTP/1.1 200 OK
+
+curl -sI ku1.smartlearn.lan | head -1
+HTTP/1.1 200 OK
+
+curl -sI ku2.smartlearn.lan | head -1
+HTTP/1.1 200 OK
+
+curl -sI www.smartlearn.dmz | head -1
+HTTP/1.1 200 OK
+
+curl -sI smartlearn.dmz | head -1
 HTTP/1.1 200 OK
 ```
