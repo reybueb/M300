@@ -248,7 +248,7 @@ sudo vim /etc/apache2/sites-available/www.smartlearn.lan.conf
     ServerName          smartlearn.lan
     ServerAlias         www.smartlearn.lan
     ServerAdmin         webmaster@smartlearn.lan
-    DocumentRoot        /www/smartlearn.lan
+    DocumentRoot        /www/www.smartlearn.lan
     <Directory /www/ku1.smartlearn.lan>
         Require all granted
     </Directory>
@@ -323,12 +323,6 @@ curl -sI www.smartlearn.lan | head -1
 HTTP/1.1 200 OK
 
 curl -sI smartlearn.lan | head -1
-HTTP/1.1 200 OK
-
-curl -sI www.ku1.smartlearn.lan | head -1
-HTTP/1.1 200 OK
-
-curl -sI www.ku2.smartlearn.lan | head -1
 HTTP/1.1 200 OK
 
 curl -sI ku1.smartlearn.lan | head -1
