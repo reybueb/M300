@@ -18,7 +18,7 @@ ssh-copy-id <user@host>
 # Connect to the host
 ssh <user@host>
 ```
-## BIND9
+## vmls3: BIND9
 ```
 sudo apt install bind9 -y
 ```
@@ -163,19 +163,31 @@ named-checkconf <conffile>
 named-checkzone <zone> <zonefile>
 nslookup <fqdn/ip> <dnsserverip>
 ```
-## Disk partitionate & format & mount 
+## vmls3 & vmls5: Disk partitionate & format & mount 
 ```
+sudo apt update
+sudo apt install lshw -y
+
 # List all Disks and partitions
 lsblk
 
 # partitionate
 sudo fdisk /dev/sdb
-n
-p
-1
-1
-130
-w
+
+Command (m for help): n
+Partition type
+   p   primary (0 primary, 0 extended, 4 free)
+   e   extended (container for logical partitions)
+Select (default p): 
+
+Using default response p.
+Partition number (1-4, default 1): 
+First sector (2048-2097151, default 2048): 
+Last sector, +/-sectors or +/-size{K,M,G,T,P} (2048-2097151, default 2097151): 
+
+Created a new partition 1 of type 'Linux' and of size 1023 MiB.
+
+Command (m for help): w
 
 # formate
 sudo mkfs.ext4 /dev/sdb1
@@ -188,57 +200,35 @@ sudo vim /etc/fstab
 /dev/sdb1 /www ext4 defaults 1 2 
 
 # mount
-mount -a 
-mount
+sudo mount -a 
+sudo mount
 ...
 /dev/sdb1 on /www type ext3 (rw)
 ```
-## Apache
+## vmls3 & vmls5: Apache
 ```
 # Update Host and install apache2
 sudo apt update -y
 sudo apt install apache2 -y
-
-# Go to the default directory
-cd /etc/apache2/
-
+sudo chown -R www-data:www-data /www
+```
+### vmls3: For www.smartlearn.dmz
+```
 # Creat new site configuration
-sudo vim sites-available/www.smartlearn.dmz.conf
+sudo vim /etc/apache2/sites-available/www.smartlearn.dmz.conf
 <VirtualHost *:80>
     ServerName          smartlearn.dmz
     ServerAlias         www.smartlearn.dmz
-    ServerAdmin         root@root.com
-    DocumentRoot        /var/www/smartlearn.dmz/
+    ServerAdmin         webmaster@smartlearn.dmz
+    DocumentRoot        /www/smartlearn.dmz
 
     ErrorLog            ${APACHE_LOG_DIR}/error.log
     CustomLog           ${APACHE_LOG_DIR}/access.log combined
-
-    <Directory /var/www/smartlearn.dmz/>
-        Require all granted
-    </Directory>
 </VirtualHost>
-
-# Create website-file directory and change the owner/group to www-data
-sudo mkdir /var/www/smartlearn.dmz
-sudo chown www-data:www-data /var/www/smartlearn.dmz
-
-# Create index.html file
-sudo vim /var/www/smartlearn.dmz/index.html
-<html>
-    <head>
-        <title>Welcome to smartlearn.dmz!</title>
-    </head>
-    <body>
-        <h1>Success!  The smartlearn.dmz virtual host is working!</h1>
-    </body>
-</html>
-
-# Change the owner of the index.html 
-sudo chown www-data:www-data /var/www/smartlearn.dmz/index.html
 
 # Enable virtualhostconfig and disable default virtualhostconfig 
 sudo a2ensite www.smartlearn.dmz.conf 
-sudo a2dissite www.smartlearn.dmz.conf 
+sudo a2dissite 000-default.conf 
 
 # Reload sites and configs 
 sudo systemctl reload apache2
@@ -247,41 +237,81 @@ sudo systemctl reload apache2
 sudo vim /etc/bind/db.smartlearn.dmz
 ...
 www IN A 192.168.220.13
-
-sudo vim /etc/bind/db.192.168.220
-...
-13 IN CNAME www.smartlearn.dmz
+@   IN A 192.168.220.13
 
 # Restart the dns to load the new configuration
 sudo systemctl restart bind9
 
 # Testing 
-curl -v www.smartlearn.dmz
-*   Trying 192.168.220.13:80...
-* Connected to 192.168.220.13 (192.168.220.13) port 80 (#0)
-> GET / HTTP/1.1
-> Host: 192.168.220.13
-> User-Agent: curl/7.81.0
-> Accept: */*
-> 
-* Mark bundle as not supporting multiuse
-< HTTP/1.1 200 OK
-< Date: Wed, 22 Mar 2023 10:25:15 GMT
-< Server: Apache/2.4.52 (Ubuntu)
-< Last-Modified: Wed, 15 Mar 2023 10:08:10 GMT
-< ETag: "b6-5f6ed8575632f"
-< Accept-Ranges: bytes
-< Content-Length: 182
-< Vary: Accept-Encoding
-< Content-Type: text/html
-< 
-<html>
-    <head>
-        <title>Welcome to smartlearn.dmz!</title>
-    </head>
-    <body>
-        <h1>Success!  The smartlearn.dmz virtual host is working!</h1>
-    </body>
-</html>
-* Connection #0 to host 192.168.220.13 left intact
+curl -sI www.smartlearn.dmz | head -1
+HTTP/1.1 200 OK
+```
+### vmls5: For www.smartlearn.lan & ku1.smartlearn.lan & ku2.smartlearn.lan 
+```
+# Creat new site configuration
+sudo vim /etc/apache2/sites-available/www.smartlearn.lan.conf
+<VirtualHost *:80>
+    ServerName          smartlearn.lan
+    ServerAlias         www.smartlearn.lan
+    ServerAdmin         webmaster@smartlearn.lan
+    DocumentRoot        /www/smartlearn.lan
+    ErrorLog            ${APACHE_LOG_DIR}/error.log
+    CustomLog           ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+
+sudo vim /etc/apache2/sites-available/ku1.smartlearn.lan.conf
+<VirtualHost *:80>
+    ServerAdmin webmaster@smartlearn.lan
+    ServerName ku1.smartlearn.lan
+    ServerAlias www.ku1.smartlearn.lan
+    DocumentRoot /www/ku1.smartlearn.lan
+    <Directory /www/ku1.smartlearn.lan>
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+
+sudo vim /etc/apache2/sites-available/ku2.smartlearn.lan.conf
+<VirtualHost *:80>
+    ServerAdmin webmaster@smartlearn.lan
+    ServerName ku2.smartlearn.lan
+    ServerAlias www.ku2.smartlearn.lan
+    DocumentRoot /www/ku2.smartlearn.lan
+    <Directory /www/ku2.smartlearn.lan>
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+
+# Enable virtualhostconfig and disable default virtualhostconfig 
+sudo a2ensite www.smartlearn.lan.conf 
+sudo a2ensite ku1.smartlearn.lan.conf
+sudo a2ensite ku2.smartlearn.lan.conf
+sudo a2dissite 000-default.conf 
+
+# Reload sites and configs 
+sudo systemctl reload apache2
+
+# Add new dns record
+sudo vim /etc/bind/db.smartlearn.lan
+...
+www     IN A 192.168.210.65
+@       IN A 192.168.210.65
+ku1     IN A 192.168.210.65
+ku2     IN A 192.168.210.65
+www.ku1 IN A 192.168.210.65
+www.ku2 IN A 192.168.210.65
+
+# Restart the dns to load the new configuration
+sudo systemctl restart bind9
+
+# Testing 
+curl -sI www.smartlearn.lan | head -1
+HTTP/1.1 200 OK
 ```
