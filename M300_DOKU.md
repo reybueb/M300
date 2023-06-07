@@ -1,4 +1,36 @@
 # M300 Documentation
+## Set Netplan
+```
+# vmls3:
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth0:
+      addresses: [ 192.168.220.13/24 ]
+      gateway4: 192.168.220.1
+      nameservers:
+        search: [ smartlearn.dmz ]
+        addresses: [ 8.8.8.8 ]
+# vmls4:
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth0:
+      addresses: [ 192.168.210.64/24 ]
+      gateway4: 192.168.210.1
+      nameservers:
+        search: [ smartlearn.lan ]
+        addresses: [ 192.168.210.1 ]
+# vmsl5: 
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth0:
+      dhcp4: true
+```
 ## SSH
 ### Files
 | Filename | Use |
@@ -155,6 +187,16 @@ $TTL    600
 # On Client & DNS-Server for search-domain
 sudo resolvectl dns eth0 192.168.220.13
 sudo resolvectl domain eth0 smartlearn.dmz smartlearn.lan
+
+# vmls3, vmls4, vmls5: 
+vim /etc/systemd/resolved.conf
+
+[Resolve]
+DNS=192.168.220.13
+Domains=smartlearn.lan smartlearn.dmz
+
+sudo systemctl restart systemd-resolved
+
 ```
 ### vmlp1: Testing
 ```
@@ -373,4 +415,148 @@ sftp ftpuser@vmls3
 sftp ftpuser@ftp.smartlearn.dmz
 sftp ftpuser@vmls5
 sftp ftpuser@ftp.smartlearn.lan
+```
+## ISC-DHCP
+vmls4:
+```
+# Update
+sudo apt update
+sudo apt -y install isc-dhcp-server
+
+# modify conf-file
+vim /etc/dhcp/dhcpd.conf:
+
+...
+option domain-name "smartlearn.lan.";
+option domain-name-servers ns.smartlearn.dmz;
+authoritative;
+subnet 192.168.210.0 netmask 255.255.255.0 {
+    range 192.168.210.100 192.168.210.110;
+    option domain-name-servers 192.168.220.13;
+    option domain-name "smartlearn.lan.";
+    option domain-search "smartlearn.lan", "smartlearn.dmz";
+    option subnet-mask 255.255.255.0;
+    option routers 192.168.210.1;
+    default-lease-time 120;
+    max-lease-time 300;
+}
+
+host vmls5 {
+    hardware ethernet 00:50:56:00:24:33;
+    fixed-address 192.168.210.65;
+    option host-name "vmls5";
+}
+...
+
+# Restart
+sudo systemctl restart isc-dhcp-server
+```
+## DDNS
+```
+# Prepare rndc.key
+sudo cp /etc/bind/rndc.key ~/rndc.key 
+sudo chown vmadmin:vmadmin ~/rndc.key 
+```
+vmls3: 
+```
+# Edit named.conf.local
+vim /etc/bind/named.conf.local:
+
+# Extend conf
+...
+include "/etc/bind/rndc.key";
+...
+zone "smartlearn.lan" IN {
+	...
+    allow-update {
+        key "rndc-key";
+    };
+};
+zone "210.168.192.in-addr.arpa" IN {
+	...
+    allow-update {
+        key "rndc-key";
+    };
+};
+...
+
+# Modify db.smartlearn.lan
+vim /etc/bind/db.smartlearn.lan:
+
+...
+;vmwp1  IN      A       192.168.210.11
+...
+;vmlp1  IN      A       192.168.210.31
+...
+;vmls5  IN      A       192.168.210.65
+...
+
+# Set Permission 
+sudo chmod g+w /etc/bind
+
+# Edit apparmor
+vim /etc/apparmor.d/usr.sbin.named:
+
+...
+profile named /usr/sbin/named flags=(attach_disconnected) {
+  ...
+  /etc/bind/** rw,
+  ...
+}
+...
+```
+vmls4:
+```
+sudo scp vmadmin@vmls3:~/rndc.key /etc/dhcp/ddns-keys/rndc.key
+```
+### Edit DHCP Conf
+vmls4: 
+```
+vim /etc/dhcp/dhcpd.conf:
+
+...
+ddns-update-style standard;
+ddns-updates on;
+ignore client-updates;
+update-static-leases on;
+...
+include "/etc/dhcp/ddns-keys/rndc.key";
+...
+zone smartlearn.lan. {
+    primary vmls3.smartlearn.dmz.;
+    key rndc-key;
+}
+
+zone 210.168.192.in-addr.arpa. IN {
+    primary vmls3.smartlearn.dmz.;
+    key rndc-key;
+}
+...
+```
+### Restart Services 
+vmls3:
+```
+sudo systemctl restart apparmor
+sudo systemctl restart named
+```
+vmls4:
+```
+sudo systemctl restart isc-dhcp-server
+```
+### Testing
+```
+vim /etc/netplan/00-eth0.yaml
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth0:
+      dhcp4: true
+
+sudo apt update
+sudo apt -y install dhcpcd5
+sudo dhcpcd -T eth0
+sudo journalctl -u isc-dhcp-server -f -n 100 # Server
+cat /var/lib/dhcp/dhcpd.leases # Server
+cat /var/lib/dhcp/dhclient.leases # Client
 ```
