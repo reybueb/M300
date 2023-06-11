@@ -560,3 +560,144 @@ sudo journalctl -u isc-dhcp-server -f -n 100 # Server
 cat /var/lib/dhcp/dhcpd.leases # Server
 cat /var/lib/dhcp/dhclient.leases # Client
 ```
+## Samba
+vmls4:
+```
+sudo apt update
+sudo apt -y install samba samba-common cifs-utils
+
+# Create share folders
+sudo mkdir /home/vmadmin/testshare
+sudo mkdir /var/smbshare
+sudo mkdir /var/smbshare/tuxplanet
+sudo mkdir /var/smbshare/ladiesplace
+sudo mkdir /var/smbshare/mensplace
+sudo mkdir /var/smbshare/scratch
+sudo mkdir /var/smbshare/music
+
+# Permissions
+sudo chmod 2770 /var/smbshr/*
+sudo chmod 2755 /var/smbshr/music
+
+# Create users and groups
+sudo groupadd tuxies
+sudo groupadd tuxladies
+sudo groupadd tuxmens
+sudo groupadd violenttux
+
+sudo chown root:tuxies /var/smbshare/tuxplanet
+sudo chown root:tuxladies /var/smbshare/ladiesplace
+sudo chown root:tuxmens /var/smbshare/mensplace
+sudo chown root:violenttux /var/smbshare/scratch
+sudo chown root:tuxies /var/smbshare/music
+
+sudo useradd -g tuxies -M -s /sbin/nologin -p sml12345 laratux
+sudo useradd -g tuxies -M -s /sbin/nologin -p sml12345 cutetux
+sudo useradd -g tuxies -M -s /sbin/nologin -p sml12345 mrtux
+sudo useradd -g tuxies -M -s /sbin/nologin -p sml12345 rambotux
+sudo useradd -g tuxies -M -s /sbin/nologin -p sml12345 luketux
+sudo useradd -g tuxies -M -s /sbin/nologin -p sml12345 slashtux
+sudo useradd -g tuxies -M -s /sbin/nologin -p sml12345 divatux
+
+sudo usermod -aG tuxladies,violenttux laratux
+sudo usermod -aG tuxladies cutetux
+sudo usermod -aG tuxmens,violenttux mrtux
+sudo usermod -aG tuxmens,violenttux rambotux
+sudo usermod -aG tuxmens,violenttux luketux
+sudo usermod -aG tuxmens slashtux
+sudo usermod -aG tuxladies divatux
+
+echo -ne "sml12345\nsml12345\n" | sudo smbpasswd -a vmadmin
+echo -ne "sml12345\nsml12345\n" | sudo smbpasswd -a laratux
+echo -ne "sml12345\nsml12345\n" | sudo smbpasswd -a cutetux
+echo -ne "sml12345\nsml12345\n" | sudo smbpasswd -a mrtux
+echo -ne "sml12345\nsml12345\n" | sudo smbpasswd -a rambotux
+echo -ne "sml12345\nsml12345\n" | sudo smbpasswd -a luketux
+echo -ne "sml12345\nsml12345\n" | sudo smbpasswd -a slashtux
+echo -ne "sml12345\nsml12345\n" | sudo smbpasswd -a divatux
+
+vim /etc/samba/smb.conf
+
+[global]
+   workgroup = WORKGROUP
+   unix charset = UTF-8
+   server string = %h server (Samba, Ubuntu)
+   dns proxy = no
+   log file = /var/log/samba/log.%m
+   max log size = 1000
+   syslog = 0
+   server role = standalone server
+
+   passdb backend = tdbsam
+   obey pam restrictions = yes
+   unix password sync = no
+   pam password change = no
+
+   map to guest = bad user
+
+[tuxplanet]
+   path = /var/smbshare/tuxplanet
+   writable = yes
+   create mask = 0770
+   directory mask = 0770
+   share modes = yes
+   public = no
+   valid users = @tuxies
+
+[ladiesplace]
+   path = /var/smbshare/ladiesplace
+   writable = yes
+   create mask = 0770
+   directory mask = 0770
+   share modes = yes
+   public = no
+   valid users = @tuxladies
+
+[mensplace]
+   path = /var/smbshare/mensplace
+   writable = yes
+   create mask = 0770
+   directory mask = 0770
+   share modes = yes
+   public = no
+   valid users = @tuxmens
+
+[scratch]
+   path = /var/smbshare/scratch
+   writable = yes
+   create mask = 0770
+   directory mask = 0770
+   share modes = yes
+   public = no
+   valid users = @violenttux
+
+[music]
+   path = /var/smbshare/music
+   writable = yes
+   create mask = 0770
+   directory mask = 0770
+   share modes = yes
+   public = no
+   valid users = @tuxies
+
+sudo systemctl restart smbd
+sudo systemctl restart nmbd
+```
+### Testing
+vmlp1:
+````
+smbclient -L vmls4 -U luketux
+Password for [WORKGROUP\luketux]:
+
+	Sharename       Type      Comment
+	---------       ----      -------
+	tuxplanet       Disk      
+	ladiesplace     Disk      
+	mensplace       Disk      
+	scratch         Disk      
+	music           Disk      
+	IPC$            IPC       IPC Service (vmls4 server (Samba, Ubuntu))
+SMB1 disabled -- no workgroup available
+
+smbclient //vmls4/mensplace -U mrtux
+```
